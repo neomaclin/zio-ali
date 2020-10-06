@@ -14,6 +14,16 @@ object AliYunRegion {
   })
 }
 
+sealed trait AliYunEndpoint {
+  val endpoint: String
+}
+
+object AliYunEndpoint {
+  def fromString(value: String): Either[InvalidSettings, AliYunEndpoint] = Right(new AliYunEndpoint {
+    val endpoint: String = value
+  })
+}
+
 final case class AliYunSettings(region: AliYunRegion, credentials: AliYunCredentials)
 
 object AliYunSettings {

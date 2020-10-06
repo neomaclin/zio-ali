@@ -34,6 +34,7 @@ lazy val `zio-ali` = project
       "dev.zio"                %% "zio"                         % zioVersion,
       "org.scala-lang.modules" %% "scala-collection-compat"     % "2.2.0",
       "com.aliyun"              % "aliyun-java-sdk-core" % "4.0.3",
+      "com.aliyun.oss"  % "aliyun-sdk-oss" % "3.11.1",
       "dev.zio"                %% "zio-test"                    % zioVersion % Test,
       "dev.zio"                %% "zio-test-sbt"                % zioVersion % Test
     ) ++ Seq(
