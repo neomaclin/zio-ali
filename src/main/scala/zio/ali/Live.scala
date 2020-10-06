@@ -12,10 +12,10 @@ final class Live(unsafeClient: DefaultAcsClient) extends AliYun.Service {
   private def buildSMSRequest(smsRequest: SMS.Request, templateParamValue: String) = {
     val request = new CommonRequest
     //request.setProtocol(ProtocolType.HTTPS);
-    request.setMethod(MethodType.POST)
-    request.setDomain("dysmsapi.aliyuncs.com")
-    request.setVersion("2017-05-25")
-    request.setAction(SMS.action)
+    request.setSysMethod(MethodType.POST)
+    request.setSysDomain("dysmsapi.aliyuncs.com")
+    request.setSysVersion("2017-05-25")
+    request.setSysAction(SMS.action)
     request.putQueryParameter("RegionId", "cn-hangzhou")
     request.putQueryParameter("PhoneNumbers", smsRequest.phoneNumber)
     request.putQueryParameter("SignName", smsRequest.signName)
