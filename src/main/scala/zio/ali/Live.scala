@@ -4,6 +4,7 @@ import com.aliyuncs.{CommonRequest, DefaultAcsClient}
 import com.aliyuncs.exceptions.ClientException
 import com.aliyuncs.http.MethodType
 import com.aliyuncs.profile.DefaultProfile
+import zio.ali.models.SMS
 import zio.{ZIO, _}
 import zio.blocking.{Blocking, blocking}
 
@@ -31,16 +32,15 @@ final class Live(unsafeClient: DefaultAcsClient) extends AliYun.Service {
     import io.circe.generic.auto._, io.circe.parser._
     for {
       response <- execute(client => Task.effect(client.getCommonResponse(buildSMSRequest(request, templateParamValue))))
-      result <-
-        if (response.getHttpResponse.isSuccess) {
+      result <- if (response.getHttpResponse.isSuccess) {
           for {
             value <- ZIO.fromEither(parse(response.getData).flatMap(_.as[SMS.Response])).mapError(e => FailureToParseResponse(e.getMessage))
-            success <- if (value.Code.equals("OK")) ZIO.succeed(value) else ZIO.fail(FailureToSendSMS("发送短信失败"))
+            success <- if (value.Code.equals("OK")) ZIO.succeed(value) else ZIO.fail(FailureToSendSMS(""))
           } yield {
             success
           }
         } else {
-          ZIO.fail(FailureToSendSMS("发送短信失败，请稍后重试"))
+          ZIO.fail(FailureToSendSMS(""))
         }
     } yield {
       result

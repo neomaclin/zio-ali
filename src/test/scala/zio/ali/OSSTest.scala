@@ -13,8 +13,13 @@ object OSSTest extends zio.App {
 
   val result = ossBucketInfo("shadow-iris")
 
-  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = (for {
-    r <- result
-    _ <- putStrLn(r.getBucket.getIntranetEndpoint)
-  } yield ()).provideLayer(fullLayer++Console.live).exitCode
+//  val future = (for {
+//    r <- result
+//    _ <- putStrLn(r.getBucket.getIntranetEndpoint)
+//  } yield ()).provideLayer(fullLayer++Console.live).toFuture
+
+//  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = (for {
+//    r <- result
+//    _ <- putStrLn(r.getBucket.getIntranetEndpoint)
+//  } yield ()).provideLayer(fullLayer++Console.live).toFuture
 }
