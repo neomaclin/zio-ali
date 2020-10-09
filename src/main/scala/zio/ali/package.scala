@@ -3,20 +3,25 @@ package zio
 
 import java.io.{File, InputStream}
 import java.net.URL
-import java.util.Date
+import java.util.Properties
 
+import com.aliyun.openservices.ons.api.exception.ONSClientException
+import com.aliyun.openservices.ons.api.{Message, MessageListener, MessageSelector, OnExceptionContext, SendResult}
 import com.aliyun.oss.model.SetBucketCORSRequest.CORSRule
 import com.aliyun.oss.model._
 import com.aliyuncs.DefaultAcsClient
 import com.aliyuncs.exceptions.ClientException
-import com.aliyun.oss.{HttpMethod, ClientException => OSSClientException, OSS => OSSClient}
+import com.aliyun.oss.{ClientException => OSSClientException, OSS => OSSClient}
 import zio.ali.models.SMS
 import zio.ali.models.OSS._
+import zio.ali.mq.{RocketMQConsumer, RocketMQProducer}
 import zio.blocking.Blocking
 
 package object ali {
   type AliYun    = Has[AliYun.Service]
   type AliYunOSS = Has[AliYun.OSSService]
+  type AliYunRocketMQProducer = Has[AliYun.RocketMQService.ProducerService]
+  type AliYunRocketMQConsumer = Has[AliYun.RocketMQService.ConsumerService]
 
   object AliYun {
 
@@ -24,6 +29,18 @@ package object ali {
       def sendSMS(request: SMS.Request, templateParamValue: String): ZIO[Blocking, ClientException, SMS.Response]
       def execute[T](f: DefaultAcsClient => Task[T]): ZIO[Blocking, ClientException, T]
     }
+
+    object RocketMQService{
+      trait ProducerService{
+        def send(message: Message): ZIO[Blocking,ONSClientException, SendResult]
+        def sendAsync(message: Message): IO[OnExceptionContext, SendResult]
+        def sendOneway(message: Message): Task[Unit]
+      }
+      trait ConsumerService{
+        def subscribe(topic: String, selector: MessageSelector)(listener: MessageListener): Task[Unit]
+      }
+    }
+
 
     trait OSSService{
       def execute[T](f: OSSClient => Task[T]): ZIO[Blocking, OSSClientException, T]
@@ -131,8 +148,14 @@ package object ali {
   def oss(endpoint: String, credentials: AliYunCredentials): Layer[ConnectionError, AliYunOSS] =
     ZLayer.fromManaged(OSS.connect(endpoint, credentials))
 
-  import OSS._
+//  import OSS._
 
   def bucketInfo(bucketName: String): ZIO[Blocking with AliYunOSS,OSSClientException,BucketInfo] =
     ZIO.accessM(_.get[AliYun.OSSService].getBucketInfo(OSSGenericRequest(bucketName)))
+
+  def rocketMQProducer(properties: Properties): Layer[ConnectionError, AliYunRocketMQProducer] =
+    ZLayer.fromManaged(RocketMQProducer.connect(properties))
+
+  def rocketMQConsumer(properties: Properties): Layer[ConnectionError, AliYunRocketMQConsumer] =
+    ZLayer.fromManaged(RocketMQConsumer.connect(properties))
 }

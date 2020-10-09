@@ -2,7 +2,6 @@ package zio.ali
 
 import java.io.{File, InputStream}
 import java.net.URL
-import java.util.Date
 
 import com.aliyun.oss.model._
 import zio.{Managed, Task, ZIO}
