@@ -3,6 +3,7 @@ package zio.ali
 import java.io.{File, InputStream}
 import java.time.Instant
 
+import com.aliyun.oss.event.ProgressListener
 import com.aliyun.oss.model._
 import zio.Chunk
 
@@ -116,7 +117,7 @@ package object models {
     }
 
 
-    final case class OSSExtendBucketWormReques(bucketName: String, wormId: String = "", retentionPeriodInDays: Int = 0) {
+    final case class OSSExtendBucketWormRequest(bucketName: String, wormId: String = "", retentionPeriodInDays: Int = 0) {
       def toJava: ExtendBucketWormRequest = {
         val request = new ExtendBucketWormRequest(bucketName)
         if (wormId.nonEmpty) request.setWormId(wormId)
@@ -173,62 +174,144 @@ package object models {
       }
     }
 
-    final case class OSSExtendBucketWormRequest() {
-      def toJava: ExtendBucketWormRequest = ???
+    final case class OSSExtendBucketWormRequest(bucketName: String, wormId: String = "", retentionPeriodInDays: Int = 0) {
+      def toJava: ExtendBucketWormRequest = {
+        val request = new ExtendBucketWormRequest(bucketName)
+        if (wormId.nonEmpty) request.setWormId(wormId)
+        if (retentionPeriodInDays > 0) request.setRetentionPeriodInDays(retentionPeriodInDays)
+        request
+      }
     }
 
-    final case class OSSListVersionsRequest() {
-      def toJava: ListVersionsRequest = ???
-    }
+    final case class OSSListVersionsRequest(bucketName: String = "",
+                                            prefix: String = "",
+                                            keyMarker: String = "",
+                                            versionIdMarker: String = "",
+                                            delimiter: String = "",
+                                            maxResults: Int = 0) {
+      def toJava: ListVersionsRequest = {
+        val request = new ListVersionsRequest()
 
-
-    final case class OSSDeleteVersionRequest() {
-      def toJava: DeleteVersionRequest = ???
-    }
-
-
-    final case class OSSDeleteVersionsRequest() {
-      def toJava: DeleteVersionsRequest = ???
-    }
-
-
-    final case class OSSDeleteObjectsRequest() {
-      def toJava: DeleteObjectsRequest = ???
-    }
-
-
-    final case class OSSListPartsRequest() {
-      def toJava: ListPartsRequest = ???
-    }
-
-
-    final case class OSSSelectObjectRequest() {
-      def toJava: SelectObjectRequest = ???
+        if (bucketName.nonEmpty) request.setBucketName(bucketName)
+        if (prefix.nonEmpty) request.setPrefix(prefix)
+        if (keyMarker.nonEmpty) request.setKeyMarker(keyMarker)
+        if (versionIdMarker.nonEmpty) request.setVersionIdMarker(versionIdMarker)
+        if (delimiter.nonEmpty) request.setDelimiter(delimiter)
+        if (maxResults > 0) request.setMaxResults(maxResults)
+        request
+      }
     }
 
 
-    final case class OSSSetBucketVersioningRequest() {
-      def toJava: SetBucketVersioningRequest = ???
+    final case class OSSDeleteVersionRequest(bucketName: String, key: String, versionId: String) {
+      def toJava: DeleteVersionRequest = {
+        val request = new DeleteVersionRequest(bucketName, key, versionId)
+        request
+      }
     }
 
 
-    final case class OSSSetBucketRefererRequest() {
-      def toJava: SetBucketRefererRequest = ???
+    final case class OSSDeleteVersionsRequest(bucketName: String, keys: List[DeleteVersionsRequest.KeyVersion] = Nil) {
+      def toJava: DeleteVersionsRequest = {
+        val request = new DeleteVersionsRequest(bucketName)
+        if (keys.nonEmpty) request.setKeys(keys.asJava)
+        request
+      }
     }
 
 
-    final case class OSSSetBucketLoggingRequest() {
-      def toJava: SetBucketLoggingRequest = ???
+    final case class OSSDeleteObjectsRequest(bucketName: String,
+                                             keys: List[String] = Nil,
+                                             isQuiet: Boolean = false,
+                                             encodingType: String = "") {
+      def toJava: DeleteObjectsRequest = {
+        val request = new DeleteObjectsRequest(bucketName).withQuiet(isQuiet)
+        if (keys.nonEmpty) request.setKeys(keys.asJava)
+        if (encodingType.nonEmpty) request.setEncodingType(encodingType)
+        request
+      }
     }
 
 
-    final case class OSSSetBucketWebsiteRequest() {
-      def toJava: SetBucketWebsiteRequest = ???
+    final case class OSSListPartsRequest(bucketName: String, key: String, uploadId: String, encodingType: String = "") {
+      def toJava: ListPartsRequest = {
+        val request = new ListPartsRequest(bucketName, key, uploadId)
+        if (encodingType.nonEmpty) request.setEncodingType(encodingType)
+        request
+      }
+    }
+
+    final case class OSSRange(start: Long, end: Long)
+
+    final case class OSSSelectObjectRequest(bucketName: String,
+                                            key: String,
+                                            lineRange: Option[OSSRange] = None,
+                                            splitRange: Option[OSSRange] = None,
+                                            expression: String = "",
+                                            skipPartialDataRecord: Boolean = false,
+                                            maxSkippedRecordsAllowed: Long = 0L,
+                                            selectProgressListener: Option[ProgressListener]) {
+      def toJava: SelectObjectRequest = {
+        val request = new SelectObjectRequest(bucketName, key)
+        lineRange.foreach(range => request.setLineRange(range.start, range.`end`))
+        splitRange.foreach(range => request.setSplitRange(range.start, range.end))
+        if (expression.nonEmpty) request.setExpression(expression)
+        selectProgressListener.foreach(request.setSelectProgressListener)
+        request
+      }
     }
 
 
-    final case class OSSAddBucketReplicationRequest() {
-      def toJava: AddBucketReplicationRequest = ???
+    final case class OSSSetBucketVersioningRequest(bucketName: String, configuration: BucketVersioningConfiguration) {
+      def toJava: SetBucketVersioningRequest = {
+        val request = new SetBucketVersioningRequest(bucketName, configuration)
+        request
+      }
+    }
+
+
+    final case class OSSSetBucketRefererRequest(bucketName: String, referer: Option[BucketReferer]) {
+      def toJava: SetBucketRefererRequest = {
+        val request = new SetBucketRefererRequest(bucketName)
+        referer.foreach(request.setReferer)
+        request
+      }
+    }
+
+
+    final case class OSSSetBucketLoggingRequest(bucketName: String, targetBucket: String = "", targetPrefix: String  = "" ) {
+      def toJava: SetBucketLoggingRequest = {
+        val request = new SetBucketLoggingRequest(bucketName)
+        if (targetBucket.nonEmpty) request.setTargetBucket(targetBucket)
+        if (targetPrefix.nonEmpty) request.setTargetPrefix(targetPrefix)
+        request
+      }
+    }
+
+
+    final case class OSSSetBucketWebsiteRequest(bucketName: String,
+                                                indexDocument: String = "",
+                                                errorDocument: String  = "",
+                                                routingRules: List[RoutingRule] = Nil) {
+      def toJava: SetBucketWebsiteRequest = {
+        val request = new SetBucketWebsiteRequest(bucketName)
+        if (indexDocument.nonEmpty) request.setIndexDocument(indexDocument)
+        if (errorDocument.nonEmpty) request.setErrorDocument(errorDocument)
+        if (routingRules.nonEmpty) request.setRoutingRules(routingRules.asJava)
+        request
+      }
+    }
+
+
+    final case class OSSAddBucketReplicationRequest(bucketName: String
+                                                   ) {
+      def toJava: AddBucketReplicationRequest =  {
+        val request = new AddBucketReplicationRequest(bucketName)
+        if (indexDocument.nonEmpty) request.setIndexDocument(indexDocument)
+        if (errorDocument.nonEmpty) request.setErrorDocument(errorDocument)
+        if (routingRules.nonEmpty) request.setRoutingRules(routingRules.asJava)
+        request
+      }
     }
 
 
@@ -338,7 +421,9 @@ package object models {
 
 
     final case class OSSGeneratePresignedUrlRequest() {
-      def toJava: GeneratePresignedUrlRequest = ???
+      def toJava: GeneratePresignedUrlRequest = {
+
+      }
     }
 
 
