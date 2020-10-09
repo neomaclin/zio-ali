@@ -20,9 +20,9 @@ package object models {
                                             storageClass: Option[StorageClass] = None) {
       def toJava: CreateBucketRequest = {
         val request = new CreateBucketRequest(bucketName)
-        request.setCannedACL(acl.orNull)
-        request.setDataRedundancyType(dataRedundancyType.orNull)
-        request.setStorageClass(storageClass.orNull)
+        acl.foreach(request.setCannedACL)
+        dataRedundancyType.foreach(request.setDataRedundancyType)
+        storageClass.foreach(request.setStorageClass)
         if (locationConstraint.nonEmpty) request.setLocationConstraint(locationConstraint)
         request
       }
@@ -279,7 +279,7 @@ package object models {
     }
 
 
-    final case class OSSSetBucketLoggingRequest(bucketName: String, targetBucket: String = "", targetPrefix: String  = "" ) {
+    final case class OSSSetBucketLoggingRequest(bucketName: String, targetBucket: String = "", targetPrefix: String = "") {
       def toJava: SetBucketLoggingRequest = {
         val request = new SetBucketLoggingRequest(bucketName)
         if (targetBucket.nonEmpty) request.setTargetBucket(targetBucket)
@@ -291,7 +291,7 @@ package object models {
 
     final case class OSSSetBucketWebsiteRequest(bucketName: String,
                                                 indexDocument: String = "",
-                                                errorDocument: String  = "",
+                                                errorDocument: String = "",
                                                 routingRules: List[RoutingRule] = Nil) {
       def toJava: SetBucketWebsiteRequest = {
         val request = new SetBucketWebsiteRequest(bucketName)
@@ -303,137 +303,337 @@ package object models {
     }
 
 
-    final case class OSSAddBucketReplicationRequest(bucketName: String
+    final case class OSSAddBucketReplicationRequest(bucketName: String,
+                                                    replicationRuleID: String = "",
+                                                    replicationKmsKeyId: String = "",
+                                                    targetBucketName: String = "",
+                                                    targetBucketLocation: String = "",
+                                                    targetCloud: String = "",
+                                                    targetCloudLocation: String = "",
+                                                    syncRule: String = "",
+                                                    sseKmsEncryptedObjectsStatus: String = "",
+                                                    enableHistoricalObjectReplication: Boolean = false,
+                                                    objectPrefixList: List[String] = Nil,
+                                                    replicationActionList: List[AddBucketReplicationRequest.ReplicationAction] = Nil
                                                    ) {
-      def toJava: AddBucketReplicationRequest =  {
+      def toJava: AddBucketReplicationRequest = {
         val request = new AddBucketReplicationRequest(bucketName)
-        if (indexDocument.nonEmpty) request.setIndexDocument(indexDocument)
-        if (errorDocument.nonEmpty) request.setErrorDocument(errorDocument)
-        if (routingRules.nonEmpty) request.setRoutingRules(routingRules.asJava)
+
+        if (replicationRuleID.nonEmpty) request.setReplicationRuleID(replicationRuleID)
+        if (replicationKmsKeyId.nonEmpty) request.setReplicaKmsKeyID(replicationKmsKeyId)
+        if (targetBucketName.nonEmpty) request.setTargetBucketName(targetBucketName)
+        if (targetBucketLocation.nonEmpty) request.setTargetBucketLocation(targetBucketLocation)
+        if (targetCloud.nonEmpty) request.setTargetCloud(targetCloud)
+        if (targetCloudLocation.nonEmpty) request.setTargetCloudLocation(targetCloudLocation)
+        if (syncRule.nonEmpty) request.setSyncRole(syncRule)
+        if (sseKmsEncryptedObjectsStatus.nonEmpty) request.setSseKmsEncryptedObjectsStatus(sseKmsEncryptedObjectsStatus)
+        if (enableHistoricalObjectReplication) request.setEnableHistoricalObjectReplication(enableHistoricalObjectReplication)
+        if (objectPrefixList.nonEmpty) request.setObjectPrefixList(objectPrefixList.asJava)
+        if (replicationActionList.nonEmpty) request.setReplicationActionList(replicationActionList.asJava)
         request
       }
     }
 
 
-    final case class OSSGetBucketReplicationProgressRequest() {
-      def toJava: GetBucketReplicationProgressRequest = ???
+    final case class OSSGetBucketReplicationProgressRequest(bucketName: String, replicationRuleID: String = "") {
+      def toJava: GetBucketReplicationProgressRequest = {
+        val request = new GetBucketReplicationProgressRequest(bucketName)
+        if (replicationRuleID.nonEmpty) request.setReplicationRuleID(replicationRuleID)
+        request
+      }
     }
 
 
-    final case class OSSDeleteBucketReplicationRequest() {
-      def toJava: DeleteBucketReplicationRequest = ???
+    final case class OSSDeleteBucketReplicationRequest(bucketName: String, replicationRuleID: String = "") {
+      def toJava: DeleteBucketReplicationRequest = {
+        val request = new DeleteBucketReplicationRequest(bucketName)
+        if (replicationRuleID.nonEmpty) request.setReplicationRuleID(replicationRuleID)
+        request
+      }
     }
 
 
-    final case class OSSSetBucketAclRequest() {
-      def toJava: SetBucketAclRequest = ???
+    final case class OSSSetBucketAclRequest(bucketName: String,
+                                            acl: Option[CannedAccessControlList] = None) {
+      def toJava: SetBucketAclRequest = {
+        val request = new SetBucketAclRequest(bucketName)
+        acl.foreach(request.setCannedACL)
+        request
+      }
     }
 
 
-    final case class OSSSetBucketCORSRequest() {
-      def toJava: SetBucketCORSRequest = ???
+    final case class OSSSetBucketCORSRequest(bucketName: String,
+                                             corsRules: List[SetBucketCORSRequest.CORSRule] = Nil,
+                                             responseVary: Boolean = false) {
+      def toJava: SetBucketCORSRequest = {
+        val request = new SetBucketCORSRequest(bucketName)
+        if (corsRules.nonEmpty) request.setCorsRules(corsRules.asJava)
+        if (responseVary) request.setResponseVary(responseVary)
+        request
+      }
     }
 
 
-    final case class OSSAppendObjectRequest() {
-      def toJava: AppendObjectRequest = ???
+    final case class OSSAppendObjectRequest(bucketName: String,
+                                            key: String,
+                                            input: Either[File, InputStream],
+                                            position: Long = 0,
+                                            iniCRC: Long = 0,
+                                            trafficLimit: Int = 0) {
+      def toJava: AppendObjectRequest = {
+        val request = input match {
+          case Right(inputStream) => new AppendObjectRequest(bucketName, key, inputStream)
+          case Left(file) => new AppendObjectRequest(bucketName, key, file)
+        }
+        if (trafficLimit > 0) request.setTrafficLimit(trafficLimit)
+        if (position > 0) request.setPosition(position)
+        if (iniCRC > 0) request.setInitCRC(iniCRC)
+        request
+      }
     }
 
 
-    final case class OSSUploadFileRequest() {
-      def toJava: UploadFileRequest = ???
+    final case class OSSUploadFileRequest(bucketName: String,
+                                          key: String,
+                                          uploadFile: String = "",
+                                          partSize: Long = 0,
+                                          taskNum: Int = 0,
+                                          enableCheckpoint: Boolean = false,
+                                          sequentialMode: Boolean = false,
+                                          checkpointFile: String = "",
+                                          metaData: Option[ObjectMetadata] = None,
+                                          callback: Option[Callback] = None,
+                                          trafficLimit: Int = 0) {
+      def toJava: UploadFileRequest = {
+        val request = new UploadFileRequest(bucketName, key)
+        if (uploadFile.nonEmpty) request.setUploadFile(uploadFile)
+        if (partSize > 0) request.setPartSize(partSize)
+        if (taskNum > 0) request.setTaskNum(taskNum)
+        if (trafficLimit > 0) request.setTrafficLimit(trafficLimit)
+        if (enableCheckpoint) request.setEnableCheckpoint(enableCheckpoint)
+        if (sequentialMode) request.setSequentialMode(sequentialMode)
+        if (checkpointFile.nonEmpty) request.setCheckpointFile(checkpointFile)
+        callback.foreach(request.setCallback)
+        metaData.foreach(request.setObjectMetadata)
+        request
+      }
     }
 
 
-    final case class OSSInitiateMultipartUploadRequest() {
-      def toJava: InitiateMultipartUploadRequest = ???
+    final case class OSSInitiateMultipartUploadRequest(bucketName: String,
+                                                       key: String,
+                                                       sequentialMode: Boolean = false,
+                                                       metaData: Option[ObjectMetadata] = None) {
+      def toJava: InitiateMultipartUploadRequest = {
+        val request = new InitiateMultipartUploadRequest(bucketName, key)
+        if (sequentialMode) request.setSequentialMode(sequentialMode)
+        metaData.foreach(request.setObjectMetadata)
+        request
+      }
     }
 
 
-    final case class OSSUploadPartRequest() {
-      def toJava: UploadPartRequest = ???
+    final case class OSSUploadPartRequest(bucketName: String,
+                                          key: String,
+                                          uploadId: String,
+                                          partNumber: Int,
+                                          inputStream: InputStream,
+                                          partSize: Long,
+                                          md5Digest: String = "",
+                                          useChunkEncoding: Boolean = false,
+                                          trafficLimit: Int = 0) {
+      def toJava: UploadPartRequest = {
+        val request = new UploadPartRequest(bucketName, key, uploadId, partNumber, inputStream, partSize)
+        if (md5Digest.nonEmpty) request.setMd5Digest(md5Digest)
+        if (useChunkEncoding) request.setUseChunkEncoding(useChunkEncoding)
+        if (trafficLimit > 0) request.setTrafficLimit(trafficLimit)
+        request
+      }
     }
 
 
-    final case class OSSCompleteMultipartUploadRequest() {
-      def toJava: CompleteMultipartUploadRequest = ???
+    final case class OSSCompleteMultipartUploadRequest(bucketName: String,
+                                                       key: String,
+                                                       uploadId: String,
+                                                       partETags: List[PartETag],
+                                                       callback: Option[Callback] = None,
+                                                       process: String = "",
+                                                       acl: Option[CannedAccessControlList] = None
+                                                      ) {
+      def toJava: CompleteMultipartUploadRequest = {
+        val request = new CompleteMultipartUploadRequest(bucketName, key, uploadId, partETags.asJava)
+        callback.foreach(request.setCallback)
+        if (process.nonEmpty) request.setProcess(process)
+        acl.foreach(request.setObjectACL)
+        request
+      }
     }
 
 
-    final case class OSSAbortMultipartUploadRequest() {
-      def toJava: AbortMultipartUploadRequest = ???
+    final case class OSSAbortMultipartUploadRequest(bucketName: String, key: String, uploadId: String) {
+      def toJava: AbortMultipartUploadRequest = {
+        val request = new AbortMultipartUploadRequest(bucketName, key, uploadId)
+        request
+      }
     }
 
 
-    final case class OSSSetBucketPolicyRequest() {
-      def toJava: SetBucketPolicyRequest = ???
+    final case class OSSSetBucketPolicyRequest(bucketName: String, policyText: String) {
+      def toJava: SetBucketPolicyRequest = {
+        val request = new SetBucketPolicyRequest(bucketName, policyText)
+        request
+      }
     }
 
 
-    final case class OSSListMultipartUploadsRequest() {
-      def toJava: ListMultipartUploadsRequest = ???
+    final case class OSSListMultipartUploadsRequest(bucketName: String,
+                                                    delimiter: String = "",
+                                                    prefix: String = "",
+                                                    maxUploads: Integer = 0,
+                                                    keyMarker: String = "",
+                                                    uploadIdMarker: String = "",
+                                                    encodingType: String = "") {
+      def toJava: ListMultipartUploadsRequest = {
+        val request = new ListMultipartUploadsRequest(bucketName)
+        if (delimiter.nonEmpty) request.setDelimiter(delimiter)
+        if (prefix.nonEmpty) request.setPrefix(prefix)
+        if (keyMarker.nonEmpty) request.setKeyMarker(keyMarker)
+        if (uploadIdMarker.nonEmpty) request.setUploadIdMarker(uploadIdMarker)
+        if (encodingType.nonEmpty) request.setEncodingType(encodingType)
+        if (maxUploads > 0) request.setMaxUploads(maxUploads)
+        request
+      }
     }
 
 
     final case class OSSDownloadFileRequest() {
-      def toJava: DownloadFileRequest = ???
+      def toJava: DownloadFileRequest = {
+        val request = new DownloadFileRequest(bucketName)
+
+        request
+      }
     }
 
 
-    final case class OSSSetObjectAclRequest() {
-      def toJava: SetObjectAclRequest = ???
+    final case class OSSSetObjectAclRequest(bucketName: String, key: String, versionId: String,
+                                            cannedACL: Option[CannedAccessControlList] = None) {
+      def toJava: SetObjectAclRequest = {
+        val request = new SetObjectAclRequest(bucketName, key)
+        cannedACL.foreach(request.setCannedACL)
+        request
+      }
     }
 
 
     final case class OSSCopyObjectRequest() {
-      def toJava: CopyObjectRequest = ???
+      def toJava: CopyObjectRequest = {
+        val request = new CopyObjectRequest(bucketName)
+
+        request
+      }
     }
 
 
-    final case class OSSRestoreObjectRequest() {
-      def toJava: RestoreObjectRequest = ???
+    final case class OSSRestoreObjectRequest(bucketName: String,
+                                             key: String,
+                                             restoreConfiguration: RestoreConfiguration) {
+      def toJava: RestoreObjectRequest = {
+        val request = new RestoreObjectRequest(bucketName, key, restoreConfiguration)
+
+        request
+      }
     }
 
 
-    final case class OSSListObjectsRequest() {
-      def toJava: ListObjectsRequest = ???
+    final case class OSSListObjectsRequest(bucketName: String,
+                                           delimiter: String = "",
+                                           prefix: String = "",
+                                           maxKeys: Integer = 0,
+                                           marker: String = "",
+                                           encodingType: String = "") {
+      def toJava: ListObjectsRequest = {
+        val request = new ListObjectsRequest(bucketName)
+        if (delimiter.nonEmpty) request.setDelimiter(delimiter)
+        if (prefix.nonEmpty) request.setPrefix(prefix)
+        if (marker.nonEmpty) request.setMarker(marker)
+        if (encodingType.nonEmpty) request.setEncodingType(encodingType)
+        if (maxKeys > 0) request.setMaxKeys(maxKeys)
+        request
+      }
     }
 
 
     final case class OSSUploadPartCopyRequest() {
-      def toJava: UploadPartCopyRequest = ???
+      def toJava: UploadPartCopyRequest = {
+        val request = new UploadPartCopyRequest(bucketName)
+
+        request
+      }
     }
 
 
-    final case class OSSCreateSymlinkRequest() {
-      def toJava: CreateSymlinkRequest = ???
+    final case class OSSCreateSymlinkRequest(bucketName: String, symlink: String, target: String,
+                                             metaData: Option[ObjectMetadata] = None) {
+      def toJava: CreateSymlinkRequest = {
+        val request = new CreateSymlinkRequest(bucketName, symlink, target)
+        metaData.foreach(request.setMetadata)
+        request
+      }
     }
 
 
     final case class OSSSetObjectTaggingRequest() {
-      def toJava: SetObjectTaggingRequest = ???
+      def toJava: SetObjectTaggingRequest = {
+        val request = new SetObjectTaggingRequest(bucketName)
+
+        request
+      }
     }
 
 
-    final case class OSSCreateSelectObjectMetadataRequest() {
-      def toJava: CreateSelectObjectMetadataRequest = ???
+    final case class OSSCreateSelectObjectMetadataRequest(bucketName: String,
+                                                          key: String,
+                                                          process: String = "",
+                                                          inputSerialization: Option[InputSerialization] = None,
+                                                          overwrite: Boolean = false,
+                                                          selectProgressListener: Option[ProgressListener] = None) {
+      def toJava: CreateSelectObjectMetadataRequest = {
+        val request = new CreateSelectObjectMetadataRequest(bucketName, key)
+        if (process.nonEmpty) request.setProcess(process)
+        inputSerialization.foreach(request.setInputSerialization)
+        if (overwrite) request.setOverwrite(overwrite)
+        selectProgressListener.foreach(request.setSelectProgressListener)
+        request
+      }
     }
 
 
     final case class OSSGeneratePresignedUrlRequest() {
       def toJava: GeneratePresignedUrlRequest = {
+        val request = new GeneratePresignedUrlRequest(bucketName)
 
+        request
       }
     }
 
 
-    final case class OSSSetBucketEncryptionRequest() {
-      def toJava: SetBucketEncryptionRequest = ???
+    final case class OSSSetBucketEncryptionRequest(bucketName: String,
+                                                   serverSideEncryptionConfiguration: Option[ServerSideEncryptionConfiguration] = None) {
+      def toJava: SetBucketEncryptionRequest = {
+        val request = new SetBucketEncryptionRequest(bucketName)
+        serverSideEncryptionConfiguration.foreach(request.setServerSideEncryptionConfiguration)
+        request
+      }
     }
 
 
-    final case class OSSProcessObjectRequest() {
-      def toJava: ProcessObjectRequest = ???
+    final case class OSSProcessObjectRequest(bucketName: String, key: String, process: String) {
+      def toJava: ProcessObjectRequest = {
+        val request = new ProcessObjectRequest(bucketName, key, process)
+
+        request
+      }
     }
 
 
