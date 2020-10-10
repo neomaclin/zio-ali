@@ -2,7 +2,9 @@ package zio.ali
 
 import java.io.{File, InputStream}
 import java.time.Instant
+import java.util.Date
 
+import com.aliyun.oss.HttpMethod
 import com.aliyun.oss.event.ProgressListener
 import com.aliyun.oss.model._
 import zio.Chunk
@@ -115,17 +117,6 @@ package object models {
         request
       }
     }
-
-
-    final case class OSSExtendBucketWormRequest(bucketName: String, wormId: String = "", retentionPeriodInDays: Int = 0) {
-      def toJava: ExtendBucketWormRequest = {
-        val request = new ExtendBucketWormRequest(bucketName)
-        if (wormId.nonEmpty) request.setWormId(wormId)
-        if (retentionPeriodInDays > 0) request.setRetentionPeriodInDays(retentionPeriodInDays)
-        request
-      }
-    }
-
 
     final case class OSSSetBucketRequestPaymentRequest(bucketName: String, payer: Option[Payer]) {
       def toJava: SetBucketRequestPaymentRequest = {
@@ -245,16 +236,16 @@ package object models {
 
     final case class OSSSelectObjectRequest(bucketName: String,
                                             key: String,
-                                            lineRange: Option[OSSRange] = None,
-                                            splitRange: Option[OSSRange] = None,
+                                            lineOSSRange: Option[OSSRange] = None,
+                                            splitOSSRange: Option[OSSRange] = None,
                                             expression: String = "",
                                             skipPartialDataRecord: Boolean = false,
                                             maxSkippedRecordsAllowed: Long = 0L,
                                             selectProgressListener: Option[ProgressListener]) {
       def toJava: SelectObjectRequest = {
         val request = new SelectObjectRequest(bucketName, key)
-        lineRange.foreach(range => request.setLineRange(range.start, range.`end`))
-        splitRange.foreach(range => request.setSplitRange(range.start, range.end))
+        lineOSSRange.foreach(range => request.setLineRange(range.start, range.end))
+        splitOSSRange.foreach(range => request.setSplitRange(range.start, range.end))
         if (expression.nonEmpty) request.setExpression(expression)
         selectProgressListener.foreach(request.setSelectProgressListener)
         request
@@ -507,10 +498,33 @@ package object models {
     }
 
 
-    final case class OSSDownloadFileRequest() {
+    final case class OSSDownloadFileRequest(bucketName: String,
+                                            key: String,
+                                            downloadFile: String = "",
+                                            partSize: Long = 1024 * 100,
+                                            taskNum: Int = 1,
+                                            enableCheckpoint: Boolean = false,
+                                            checkpointFile: String = "",
+                                            matchingETagConstraints: List[String] = Nil,
+                                            nonmatchingEtagConstraints: List[String] = Nil,
+                                            unmodifiedSinceConstraint: Option[Date] = None,
+                                            modifiedSinceConstraint: Option[Date] = None,
+                                            trafficLimit: Int = 0,
+                                            range: Option[OSSRange] = None
+                                           ) {
       def toJava: DownloadFileRequest = {
-        val request = new DownloadFileRequest(bucketName)
-
+        val request = new DownloadFileRequest(bucketName, key)
+        if (downloadFile.nonEmpty) request.setDownloadFile(downloadFile)
+        if (partSize != 1024 * 100) request.setPartSize(partSize)
+        if (taskNum > 1) request.setTaskNum(taskNum)
+        if (enableCheckpoint) request.setEnableCheckpoint(enableCheckpoint)
+        if (checkpointFile.nonEmpty) request.setCheckpointFile(checkpointFile)
+        if (matchingETagConstraints.nonEmpty) request.setMatchingETagConstraints(matchingETagConstraints.asJava)
+        if (nonmatchingEtagConstraints.nonEmpty) request.setNonmatchingETagConstraints(nonmatchingEtagConstraints.asJava)
+        if (unmodifiedSinceConstraint.nonEmpty) request.setUnmodifiedSinceConstraint(unmodifiedSinceConstraint.get)
+        if (modifiedSinceConstraint.nonEmpty) request.setModifiedSinceConstraint(modifiedSinceConstraint.get)
+        if (trafficLimit > 0) request.setTrafficLimit(trafficLimit)
+        range.foreach(r => request.setRange(r.start, r.end))
         request
       }
     }
@@ -526,10 +540,30 @@ package object models {
     }
 
 
-    final case class OSSCopyObjectRequest() {
+    final case class OSSCopyObjectRequest(sourceBucketName: String,
+                                          sourceKey: String,
+                                          destinationBucketName: String,
+                                          destinationKey: String,
+                                          sourceVersionId: String = "",
+                                          serverSideEncryption: String = "",
+                                          serverSideEncryptionKeyID: String = "",
+                                          newObjectMetadata: Option[ObjectMetadata] = None,
+                                          matchingETagConstraints: List[String] = Nil,
+                                          nonmatchingEtagConstraints: List[String] = Nil,
+                                          unmodifiedSinceConstraint: Option[Date] = None,
+                                          modifiedSinceConstraint: Option[Date] = None,
+                                          payer: Option[Payer] = None) {
       def toJava: CopyObjectRequest = {
-        val request = new CopyObjectRequest(bucketName)
-
+        val request = new CopyObjectRequest(sourceBucketName, sourceKey, destinationBucketName, destinationKey)
+        if (sourceVersionId.nonEmpty) request.setSourceVersionId(sourceVersionId)
+        if (serverSideEncryption.nonEmpty) request.setServerSideEncryption(serverSideEncryption)
+        if (serverSideEncryptionKeyID.nonEmpty) request.setServerSideEncryptionKeyId(serverSideEncryptionKeyID)
+        newObjectMetadata.foreach(request.setNewObjectMetadata)
+        if (matchingETagConstraints.nonEmpty) request.setMatchingETagConstraints(matchingETagConstraints.asJava)
+        if (nonmatchingEtagConstraints.nonEmpty) request.setNonmatchingETagConstraints(nonmatchingEtagConstraints.asJava)
+        if (unmodifiedSinceConstraint.nonEmpty) request.setUnmodifiedSinceConstraint(unmodifiedSinceConstraint.get)
+        if (modifiedSinceConstraint.nonEmpty) request.setModifiedSinceConstraint(modifiedSinceConstraint.get)
+        payer.foreach(request.setRequestPayer)
         request
       }
     }
@@ -540,7 +574,6 @@ package object models {
                                              restoreConfiguration: RestoreConfiguration) {
       def toJava: RestoreObjectRequest = {
         val request = new RestoreObjectRequest(bucketName, key, restoreConfiguration)
-
         request
       }
     }
@@ -564,10 +597,34 @@ package object models {
     }
 
 
-    final case class OSSUploadPartCopyRequest() {
+    final case class OSSUploadPartCopyRequest(sourceBucketName: String,
+                                              sourceKey: String,
+                                              targetBucketName: String,
+                                              targetKey: String,
+                                              uploadId: String = "",
+                                              partNumber: Int = 0,
+                                              beginIndex: Long = 0,
+                                              partSize: Long = 0,
+                                              sourceVersionId: String = "",
+                                              md5Digest: String = "",
+                                              matchingETagConstraints: List[String] = Nil,
+                                              nonmatchingEtagConstraints: List[String] = Nil,
+                                              unmodifiedSinceConstraint: Option[Date] = None,
+                                              modifiedSinceConstraint: Option[Date] = None,
+                                              payer: Option[Payer] = None) {
       def toJava: UploadPartCopyRequest = {
-        val request = new UploadPartCopyRequest(bucketName)
-
+        val request = new UploadPartCopyRequest(sourceBucketName, sourceKey, targetBucketName, targetKey)
+        if (sourceVersionId.nonEmpty) request.setSourceVersionId(sourceVersionId)
+        if (uploadId.nonEmpty) request.setUploadId(uploadId)
+        if (md5Digest.nonEmpty) request.setMd5Digest(md5Digest)
+        if (partNumber > 0) request.setPartNumber(partNumber)
+        if (beginIndex > 0) request.setBeginIndex(beginIndex)
+        if (partSize > 0) request.setPartSize(partSize)
+        if (matchingETagConstraints.nonEmpty) request.setMatchingETagConstraints(matchingETagConstraints.asJava)
+        if (nonmatchingEtagConstraints.nonEmpty) request.setNonmatchingETagConstraints(nonmatchingEtagConstraints.asJava)
+        if (unmodifiedSinceConstraint.nonEmpty) request.setUnmodifiedSinceConstraint(unmodifiedSinceConstraint.get)
+        if (modifiedSinceConstraint.nonEmpty) request.setModifiedSinceConstraint(modifiedSinceConstraint.get)
+        payer.foreach(request.setRequestPayer)
         request
       }
     }
@@ -583,10 +640,12 @@ package object models {
     }
 
 
-    final case class OSSSetObjectTaggingRequest() {
+    final case class OSSSetObjectTaggingRequest(bucketName: String,
+                                                key: String,
+                                                tags: Map[String, String] = Map.empty) {
       def toJava: SetObjectTaggingRequest = {
-        val request = new SetObjectTaggingRequest(bucketName)
-
+        val request = new SetObjectTaggingRequest(bucketName, key)
+        if (tags.nonEmpty) request.setTagSet(new TagSet(tags.asJava))
         request
       }
     }
@@ -609,10 +668,32 @@ package object models {
     }
 
 
-    final case class OSSGeneratePresignedUrlRequest() {
+    final case class OSSGeneratePresignedUrlRequest(bucketName: String,
+                                                    key: String,
+                                                    method: Option[HttpMethod] = None,
+                                                    contentType: String = "",
+                                                    contentMD5: String = "",
+                                                    process: String = "",
+                                                    expiration: Option[Date] = None,
+                                                    responseHeaders: Option[ResponseHeaderOverrides] = None,
+                                                    userMetadata: Map[String, String] = Map.empty,
+                                                    queryParam: Map[String, String] = Map.empty,
+                                                    headers: Map[String, String] = Map.empty,
+                                                    additionalHeaderNames: Set[String] = Set.empty,
+                                                    trafficLimit: Int = 0
+                                                   ) {
       def toJava: GeneratePresignedUrlRequest = {
-        val request = new GeneratePresignedUrlRequest(bucketName)
-
+        val request = new GeneratePresignedUrlRequest(bucketName, key)
+        if (contentType.nonEmpty) request.setContentType(contentType)
+        if (contentMD5.nonEmpty) request.setContentMD5(contentMD5)
+        if (process.nonEmpty) request.setProcess(process)
+        expiration.foreach(request.setExpiration)
+        responseHeaders.foreach(request.setResponseHeaders)
+        if (userMetadata.nonEmpty) request.setUserMetadata(userMetadata.asJava)
+        if (queryParam.nonEmpty) request.setQueryParameter(queryParam.asJava)
+        if (headers.nonEmpty) request.setHeaders(headers.asJava)
+        if (additionalHeaderNames.nonEmpty) request.setAdditionalHeaderNames(additionalHeaderNames.asJava)
+        if (trafficLimit > 0) request.setTrafficLimit(trafficLimit)
         request
       }
     }
