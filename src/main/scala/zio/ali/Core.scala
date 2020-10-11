@@ -8,7 +8,7 @@ import zio.ali.models.SMS
 import zio.{ZIO, _}
 import zio.blocking.{Blocking, blocking}
 
-final class Live(unsafeClient: DefaultAcsClient) extends AliYun.Service {
+final class Core(unsafeClient: DefaultAcsClient) extends AliYun.Service {
 
   private def buildSMSRequest(smsRequest: SMS.Request, templateParamValue: String) = {
     val request = new CommonRequest
@@ -48,7 +48,7 @@ final class Live(unsafeClient: DefaultAcsClient) extends AliYun.Service {
   }
 }
 
-object Live {
+object Core {
 
   def connect(region: String,
               credentials: AliYunCredentials): Managed[ConnectionError, AliYun.Service] =
@@ -63,7 +63,7 @@ object Live {
       val profile = DefaultProfile.getProfile(settings.region.region, settings.credentials.accessKeyId, settings.credentials.secret)
       new DefaultAcsClient(profile)
     }(_.shutdown())
-      .map(new Live(_))
+      .map(new Core(_))
       .mapError(e => ConnectionError(e.getMessage, e.getCause))
 
 }
