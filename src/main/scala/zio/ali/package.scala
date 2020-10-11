@@ -6,22 +6,30 @@ import java.net.URL
 import java.util.Properties
 
 import com.aliyun.openservices.ons.api.exception.ONSClientException
-import com.aliyun.openservices.ons.api.{Message, MessageListener, MessageSelector, OnExceptionContext, SendResult}
+import com.aliyun.openservices.ons.api._
+import com.aliyun.openservices.ons.api.order.MessageOrderListener
+import com.aliyun.openservices.ons.api.transaction.LocalTransactionChecker
 import com.aliyun.oss.model.SetBucketCORSRequest.CORSRule
 import com.aliyun.oss.model._
+import com.aliyun.oss.{ClientException => OSSClientException, OSS => OSSClient}
 import com.aliyuncs.DefaultAcsClient
 import com.aliyuncs.exceptions.ClientException
-import com.aliyun.oss.{ClientException => OSSClientException, OSS => OSSClient}
-import zio.ali.models.SMS
 import zio.ali.models.OSS._
-import zio.ali.mq.{RocketMQConsumer, RocketMQProducer}
+import zio.ali.models.SMS
+import zio.ali.mq.{MQLocalTransactionExecutor, RocketMQConsumer, RocketMQOrderConsumer, RocketMQOrderProducer, RocketMQProducer, RocketMQPullConsumer, RocketMQTransactionProducer}
 import zio.blocking.Blocking
+import zio.duration.Duration
+import zio.stream.ZStream
 
 package object ali {
   type AliYun    = Has[AliYun.Service]
   type AliYunOSS = Has[AliYun.OSSService]
   type AliYunRocketMQProducer = Has[AliYun.RocketMQService.ProducerService]
   type AliYunRocketMQConsumer = Has[AliYun.RocketMQService.ConsumerService]
+  type AliYunRocketMQPullConsumer = Has[AliYun.RocketMQService.PullConsumerService]
+  type AliYunRocketMQOrderProducer = Has[AliYun.RocketMQService.OrderProducerService]
+  type AliYunRocketMQOrderConsumer = Has[AliYun.RocketMQService.OrderConsumerService]
+  type AliYunRocketTractionProducer = Has[AliYun.RocketMQService.TransactionProducerService]
 
   object AliYun {
 
@@ -38,6 +46,23 @@ package object ali {
       }
       trait ConsumerService{
         def subscribe(topic: String, selector: MessageSelector)(listener: MessageListener): Task[Unit]
+      }
+
+      trait OrderProducerService{
+        def send(message: Message,shardingKey: String): ZIO[Blocking, ONSClientException, SendResult]
+      }
+
+      trait OrderConsumerService{
+        def subscribe(topic: String, selector: MessageSelector)(listener: MessageOrderListener): Task[Unit]
+      }
+
+      trait TransactionProducerService{
+        def send[T](message: Message, executor: MQLocalTransactionExecutor[T], arg: T): ZIO[Blocking, ONSClientException, SendResult]
+      }
+
+      // TODO: do not use me
+      trait PullConsumerService{
+        def poll(topic: String,duration: Duration): ZStream[Any, Nothing, Message]
       }
     }
 
@@ -158,4 +183,17 @@ package object ali {
 
   def rocketMQConsumer(properties: Properties): Layer[ConnectionError, AliYunRocketMQConsumer] =
     ZLayer.fromManaged(RocketMQConsumer.connect(properties))
+
+  def rocketMQOrderProducer(properties: Properties): Layer[ConnectionError, AliYunRocketMQOrderProducer] =
+    ZLayer.fromManaged(RocketMQOrderProducer.connect(properties))
+
+  def rocketMQOrderConsumer(properties: Properties): Layer[ConnectionError, AliYunRocketMQOrderConsumer] =
+    ZLayer.fromManaged(RocketMQOrderConsumer.connect(properties))
+
+  def rocketMQTransactionProducer(properties: Properties,checker: LocalTransactionChecker): Layer[ConnectionError, AliYunRocketTractionProducer] =
+    ZLayer.fromManaged(RocketMQTransactionProducer.connect(properties,checker))
+
+  // TODO: do not use me
+  def rocketMQPullConsumer(properties: Properties): Layer[ConnectionError, AliYunRocketMQPullConsumer] =
+    ZLayer.fromManaged(RocketMQPullConsumer.connect(properties))
 }

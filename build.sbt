@@ -32,6 +32,7 @@ lazy val `zio-ali` = project
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio"                %% "zio"                         % zioVersion,
+      "dev.zio"                %% "zio-streams"                 % zioVersion,
       "org.scala-lang.modules" %% "scala-collection-compat"     % "2.2.0",
       "com.aliyun"              % "aliyun-java-sdk-core"        % "4.0.3",
       "com.aliyun.oss"          % "aliyun-sdk-oss"              % "3.11.1",
