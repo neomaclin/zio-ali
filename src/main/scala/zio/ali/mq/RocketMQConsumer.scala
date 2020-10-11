@@ -3,7 +3,7 @@ package zio.ali.mq
 import java.util.Properties
 
 import com.aliyun.openservices.ons.api.{Consumer, MessageListener, MessageSelector, ONSFactory}
-import zio.{Managed, Task}
+import zio.{IO, Managed, Task}
 import zio.ali.{AliYun, ConnectionError}
 
 final class RocketMQConsumer(consumer: Consumer) extends AliYun.RocketMQService.ConsumerService {
@@ -13,10 +13,11 @@ final class RocketMQConsumer(consumer: Consumer) extends AliYun.RocketMQService.
 
 object RocketMQConsumer {
   def connect(properties: Properties): Managed[ConnectionError, AliYun.RocketMQService.ConsumerService] = {
-    Managed.makeEffect {
-      val consumer = ONSFactory.createConsumer(properties)
-      consumer.start()
+    (for {
+      consumer <- Task.effect(ONSFactory.createConsumer(properties))
+      _ <- Task.effect(consumer.start())
+    } yield {
       consumer
-    }(_.shutdown()).map(new RocketMQConsumer(_)).mapError(e => new ConnectionError(e.getMessage, e.getCause))
+    }).toManaged(c => IO.succeed(c.shutdown()).unit).bimap(e => ConnectionError(e.getMessage, e.getCause), new RocketMQConsumer(_))
   }
 }
