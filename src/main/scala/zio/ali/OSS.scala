@@ -316,7 +316,8 @@ final class OSS(unsafeClient: DefaultOSS) extends AliYun.OSSService {
 }
 
 object OSS {
-  def connect(endpoint: String, credentials: AliYunCredentials,
+  def connect(endpoint: String,
+              credentials: AliYunCredentials,
               securityToken: String = null,
               conf: ClientBuilderConfiguration = new ClientBuilderConfiguration): Managed[ConnectionError, AliYun.OSSService] = {
     Managed.makeEffect {

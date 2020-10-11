@@ -35,9 +35,9 @@ lazy val `zio-ali` = project
       "org.scala-lang.modules" %% "scala-collection-compat"     % "2.2.0",
       "com.aliyun"              % "aliyun-java-sdk-core"        % "4.0.3",
       "com.aliyun.oss"          % "aliyun-sdk-oss"              % "3.11.1",
+      "com.aliyun.openservices" % "ons-client" % "1.8.7.1.Final",
       "dev.zio"                %% "zio-test"                    % zioVersion % Test,
-      "dev.zio"                %% "zio-test-sbt"                % zioVersion % Test,
-      "com.aliyun.openservices" % "ons-client" % "1.8.7.1.Final"
+      "dev.zio"                %% "zio-test-sbt"                % zioVersion % Test
     ) ++ Seq(
        "io.circe" %% "circe-core",
       "io.circe" %% "circe-generic",
