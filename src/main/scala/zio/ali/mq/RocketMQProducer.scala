@@ -13,15 +13,11 @@ final class RocketMQProducer(producer: Producer) extends AliYun.RocketMQService.
     blocking(Task.effect(producer.send(message))).mapError(new ONSClientException(_))
 
   def sendAsync(message: Message): IO[OnExceptionContext, SendResult] =
-    IO.effectAsync[OnExceptionContext, SendResult] { callback => {
+    IO.effectAsync[OnExceptionContext, SendResult] { callback =>
       producer.sendAsync(message, new SendCallback {
-        override def onSuccess(sendResult: SendResult): Unit = {
-          callback(IO.succeed(sendResult))
-        }
-
+        override def onSuccess(sendResult: SendResult): Unit = callback(IO.succeed(sendResult))
         override def onException(context: OnExceptionContext): Unit = callback(IO.fail(context))
       })
-    }
     }
 
   def sendOneway(message: Message): Task[Unit] = {

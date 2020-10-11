@@ -62,7 +62,7 @@ package object ali {
 
       // TODO: do not use me
       trait PullConsumerService{
-        def poll(topic: String,duration: Duration): ZStream[Any, Nothing, Message]
+        def poll(topic: String,duration: Duration): ZStream[Any, Throwable, Message]
       }
     }
 

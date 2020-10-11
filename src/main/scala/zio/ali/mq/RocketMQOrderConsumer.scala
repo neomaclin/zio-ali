@@ -19,6 +19,7 @@ object RocketMQOrderConsumer {
       _ <- Task.effect(consumer.start())
     } yield {
       consumer
-    }).toManaged(r => IO.succeed(r.shutdown())).bimap(e => ConnectionError(e.getMessage, e.getCause), new RocketMQOrderConsumer(_))
+    }).toManaged(r => IO.succeed(r.shutdown()))
+      .bimap(e => ConnectionError(e.getMessage, e.getCause), new RocketMQOrderConsumer(_))
   }
 }

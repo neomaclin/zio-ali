@@ -21,6 +21,7 @@ object RocketMQOrderProducer{
       _ <- Task.effect(producer.start())
     }yield {
       producer
-    }).toManaged(p => IO.succeed(p.shutdown())).bimap(e => ConnectionError(e.getMessage,e.getCause),new RocketMQOrderProducer(_))
+    }).toManaged(p => IO.succeed(p.shutdown()))
+      .bimap(e => ConnectionError(e.getMessage,e.getCause),new RocketMQOrderProducer(_))
   }
 }
