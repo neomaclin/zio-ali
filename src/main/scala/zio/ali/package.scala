@@ -57,7 +57,7 @@ package object ali {
       }
 
       trait TransactionProducerService{
-        def send[T](message: Message, executor: MQLocalTransactionExecutor[T], arg: T): RIO[Blocking, SendResult]
+        def send[T](message: Message, executor: MQLocalTransactionExecutor[T], arg: T): ZIO[Blocking, ONSClientException, SendResult]
       }
 
       // TODO: do not use me

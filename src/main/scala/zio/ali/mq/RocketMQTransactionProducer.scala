@@ -2,15 +2,17 @@ package zio.ali.mq
 
 import java.util.Properties
 
+import com.aliyun.openservices.ons.api.exception.ONSClientException
 import com.aliyun.openservices.ons.api.transaction.{LocalTransactionChecker, TransactionProducer}
 import com.aliyun.openservices.ons.api.{Message, ONSFactory, SendResult}
 import zio.ali.{AliYun, ConnectionError}
 import zio.blocking.{Blocking, blocking}
-import zio.{IO, Managed, RIO, Task}
+import zio.{IO, Managed, Task, ZIO}
 
 final class RocketMQTransactionProducer(producer: TransactionProducer) extends AliYun.RocketMQService.TransactionProducerService {
-  def send[T](message: Message, executor: MQLocalTransactionExecutor[T], arg: T): RIO[Blocking, SendResult] =
+  def send[T](message: Message, executor: MQLocalTransactionExecutor[T], arg: T): ZIO[Blocking,ONSClientException, SendResult] =
     blocking(Task.effect(producer.send(message, (msg: Message, arg: Any) => executor.execute(msg, arg.asInstanceOf[T]), arg)))
+      .mapError(new ONSClientException(_))
 }
 
 object RocketMQTransactionProducer {
