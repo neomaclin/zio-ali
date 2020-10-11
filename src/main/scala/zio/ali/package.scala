@@ -8,6 +8,7 @@ import java.util.Properties
 import com.aliyun.openservices.ons.api.exception.ONSClientException
 import com.aliyun.openservices.ons.api._
 import com.aliyun.openservices.ons.api.order.MessageOrderListener
+import com.aliyun.openservices.ons.api.transaction.LocalTransactionChecker
 import com.aliyun.oss.model.SetBucketCORSRequest.CORSRule
 import com.aliyun.oss.model._
 import com.aliyun.oss.{ClientException => OSSClientException, OSS => OSSClient}
@@ -15,7 +16,7 @@ import com.aliyuncs.DefaultAcsClient
 import com.aliyuncs.exceptions.ClientException
 import zio.ali.models.OSS._
 import zio.ali.models.SMS
-import zio.ali.mq.{RocketMQConsumer, RocketMQOrderConsumer, RocketMQOrderProducer, RocketMQProducer, RocketMQPullConsumer}
+import zio.ali.mq.{MQLocalTransactionExecutor, RocketMQConsumer, RocketMQOrderConsumer, RocketMQOrderProducer, RocketMQProducer, RocketMQPullConsumer, RocketMQTransactionProducer}
 import zio.blocking.Blocking
 import zio.duration.Duration
 import zio.stream.ZStream
@@ -28,6 +29,7 @@ package object ali {
   type AliYunRocketMQPullConsumer = Has[AliYun.RocketMQService.PullConsumerService]
   type AliYunRocketMQOrderProducer = Has[AliYun.RocketMQService.OrderProducerService]
   type AliYunRocketMQOrderConsumer = Has[AliYun.RocketMQService.OrderConsumerService]
+  type AliYunRocketTractionProducer = Has[AliYun.RocketMQService.TransactionProducerService]
 
   object AliYun {
 
@@ -55,7 +57,7 @@ package object ali {
       }
 
       trait TransactionProducerService{
-
+        def send[T](message: Message, executor: MQLocalTransactionExecutor[T], arg: T): RIO[Blocking, SendResult]
       }
 
       // TODO: do not use me
@@ -187,6 +189,9 @@ package object ali {
 
   def rocketMQOrderConsumer(properties: Properties): Layer[ConnectionError, AliYunRocketMQOrderConsumer] =
     ZLayer.fromManaged(RocketMQOrderConsumer.connect(properties))
+
+  def rocketMQTransactionProducer(properties: Properties,checker: LocalTransactionChecker): Layer[ConnectionError, AliYunRocketTractionProducer] =
+    ZLayer.fromManaged(RocketMQTransactionProducer.connect(properties,checker))
 
   // TODO: do not use me
   def rocketMQPullConsumer(properties: Properties): Layer[ConnectionError, AliYunRocketMQPullConsumer] =
