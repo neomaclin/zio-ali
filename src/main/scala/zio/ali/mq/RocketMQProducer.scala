@@ -32,10 +32,11 @@ final class RocketMQProducer(producer: Producer) extends AliYun.RocketMQService.
 
 object RocketMQProducer {
   def connect(properties: Properties): Managed[ConnectionError, AliYun.RocketMQService.ProducerService] = {
-    Managed.makeEffect {
-      val producer = ONSFactory.createProducer(properties)
-      producer.start()
+    (for {
+      producer <- Task.effect(ONSFactory.createProducer(properties))
+      _ <- Task.effect(producer.start())
+    } yield {
       producer
-    }(_.shutdown()).map(new RocketMQProducer(_)).mapError(e => ConnectionError(e.getMessage, e.getCause))
+    }).toManaged(p => IO.succeed(p.shutdown())).bimap(e => ConnectionError(e.getMessage, e.getCause), new RocketMQProducer(_))
   }
 }
