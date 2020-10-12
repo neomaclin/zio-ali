@@ -5,6 +5,8 @@ import java.io.{File, InputStream}
 import java.net.URL
 import java.util.Properties
 
+import com.aliyun.openservices.aliyun.log.producer.{ProducerConfig, Result}
+import com.aliyun.openservices.aliyun.log.producer.errors.ProducerException
 import com.aliyun.openservices.ons.api.exception.ONSClientException
 import com.aliyun.openservices.ons.api._
 import com.aliyun.openservices.ons.api.order.MessageOrderListener
@@ -14,6 +16,7 @@ import com.aliyun.oss.model._
 import com.aliyun.oss.{ClientException => OSSClientException, OSS => OSSClient}
 import com.aliyuncs.DefaultAcsClient
 import com.aliyuncs.exceptions.ClientException
+import zio.ali.models.Log.LogServiceRequest
 import zio.ali.models.OSS._
 import zio.ali.models.SMS
 import zio.ali.mq.{MQLocalTransactionExecutor, RocketMQConsumer, RocketMQOrderConsumer, RocketMQOrderProducer, RocketMQProducer, RocketMQPullConsumer, RocketMQTransactionProducer}
@@ -30,6 +33,7 @@ package object ali {
   type AliYunRocketMQOrderProducer = Has[AliYun.RocketMQService.OrderProducerService]
   type AliYunRocketMQOrderConsumer = Has[AliYun.RocketMQService.OrderConsumerService]
   type AliYunRocketTractionProducer = Has[AliYun.RocketMQService.TransactionProducerService]
+  type AliYunLogService = Has[AliYun.LogService]
 
   object AliYun {
 
@@ -157,6 +161,10 @@ package object ali {
       def deleteBucketEncryption(genericRequest: OSSGenericRequest): ZIO[Blocking,OSSClientException, Unit]
       def processObject(processObjectRequest: OSSProcessObjectRequest): ZIO[Blocking, OSSClientException, GenericResult]
     }
+
+    trait LogService{
+      def send(request: LogServiceRequest): ZIO[Blocking, ProducerException, Result]
+    }
   }
 
   def live(region: String, credentials: AliYunCredentials): Layer[ConnectionError, AliYun] =
@@ -192,6 +200,9 @@ package object ali {
 
   def rocketMQTransactionProducer(properties: Properties,checker: LocalTransactionChecker): Layer[ConnectionError, AliYunRocketTractionProducer] =
     ZLayer.fromManaged(RocketMQTransactionProducer.connect(properties,checker))
+
+  def logService(config: ProducerConfig, timeOut: Duration): Layer[ConnectionError, AliYunLogService] =
+    ZLayer.fromManaged(LogProducer.connect(config, timeOut))
 
   // TODO: do not use me
   def rocketMQPullConsumer(properties: Properties): Layer[ConnectionError, AliYunRocketMQPullConsumer] =

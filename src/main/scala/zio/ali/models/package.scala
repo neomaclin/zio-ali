@@ -4,6 +4,7 @@ import java.io.{File, InputStream}
 import java.time.Instant
 import java.util.Date
 
+import com.aliyun.openservices.log.common.LogItem
 import com.aliyun.oss.HttpMethod
 import com.aliyun.oss.event.ProgressListener
 import com.aliyun.oss.model._
@@ -742,6 +743,11 @@ package object models {
                               Message: String,
                               RequestId: String)
 
+  }
+
+  object Log{
+    final case class LogServiceRequest(project: String,logStore: String,topic: String = "",source:String = "",
+                                       shardHash:Option[String] = None,logItems: Seq[LogItem])
   }
 
 }

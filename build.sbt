@@ -37,6 +37,9 @@ lazy val `zio-ali` = project
       "com.aliyun"              % "aliyun-java-sdk-core"        % "4.0.3",
       "com.aliyun.oss"          % "aliyun-sdk-oss"              % "3.11.1",
       "com.aliyun.openservices" % "ons-client" % "1.8.7.1.Final",
+      "com.aliyun.openservices" % "aliyun-log-producer" % "0.3.6",
+      "com.aliyun.openservices" % "aliyun-log" % "0.6.57",
+      "com.google.protobuf" % "protobuf-java" % "2.5.0",
       "dev.zio"                %% "zio-test"                    % zioVersion % Test,
       "dev.zio"                %% "zio-test-sbt"                % zioVersion % Test
     ) ++ Seq(
