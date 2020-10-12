@@ -11,7 +11,7 @@ import zio.{IO, Managed, Task, ZIO}
 
 final class RocketMQTransactionProducer(producer: TransactionProducer) extends AliYun.RocketMQService.TransactionProducerService {
   def send[T](message: Message, executor: MQLocalTransactionExecutor[T], arg: T): ZIO[Blocking,ONSClientException, SendResult] =
-    blocking(Task.effect(producer.send(message, (msg: Message, arg: Any) => executor.execute(msg, arg.asInstanceOf[T]), arg)))
+    blocking(Task.effect(producer.send(message, executor, arg)))
       .mapError(new ONSClientException(_))
 }
 

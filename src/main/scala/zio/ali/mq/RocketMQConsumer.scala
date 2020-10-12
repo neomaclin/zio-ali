@@ -2,7 +2,7 @@ package zio.ali.mq
 
 import java.util.Properties
 
-import com.aliyun.openservices.ons.api.{Consumer, MessageListener, MessageSelector, ONSFactory}
+import com.aliyun.openservices.ons.api.{Admin, Consumer, MessageListener, MessageSelector, ONSFactory}
 import zio.{IO, Managed, Task}
 import zio.ali.{AliYun, ConnectionError}
 
@@ -18,6 +18,8 @@ object RocketMQConsumer {
       _ <- Task.effect(consumer.start())
     } yield {
       consumer
-    }).toManaged(c => IO.succeed(c.shutdown()).unit).bimap(e => ConnectionError(e.getMessage, e.getCause), new RocketMQConsumer(_))
+    }).toManaged(c => IO.succeed(c.shutdown()))
+      .bimap(e => ConnectionError(e.getMessage, e.getCause), new RocketMQConsumer(_))
   }
 }
+
